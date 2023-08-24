@@ -4,15 +4,15 @@ import { riot_api_config } from '../utils/header_api_riot';
 import { comparePlayerInfos } from '../utils/compareRanks';
 
 
-export async function getInfo (player_usernames:string[], date:string, region:string) {
+export async function getInfo (player_usernames:string[],region:string) {
   const playersInfo: PlayerInfo[] = [];
 
   for (const player_username of player_usernames) {
     const playerInfo: PlayerInfo = {
       username: player_username,
       rank: await getRank(player_username, region),
-      wins: await getWins(player_username, region, date),
-      losses: await getLosses(player_username, region, date),
+      wins: await getWins(player_username, region),
+      losses: await getLosses(player_username, region),
       winrate: 0,
     };
 
@@ -67,7 +67,7 @@ async function getRank(player_username:string, region:string): Promise<Rank> {
   });
 }
 
-async function getWins(player_username:string, region:string, date:string): Promise<number> {
+async function getWins(player_username:string, region:string): Promise<number> {
   let BASE_URL = getRegionBaseUrl(region); 
   const endpoint1 = `/lol/summoner/v4/summoners/by-name/${player_username}`;
   const endpoint2 = `/lol/league/v4/entries/by-summoner`;
@@ -96,7 +96,7 @@ async function getWins(player_username:string, region:string, date:string): Prom
   });
 }
 
-async function getLosses(player_username:string, region:string, date:string): Promise<number> {
+async function getLosses(player_username:string, region:string): Promise<number> {
   let BASE_URL = getRegionBaseUrl(region); 
   const endpoint1 = `/lol/summoner/v4/summoners/by-name/${player_username}`;
   const endpoint2 = `/lol/league/v4/entries/by-summoner`;
