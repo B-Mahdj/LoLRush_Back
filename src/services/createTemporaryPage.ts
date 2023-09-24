@@ -1,8 +1,7 @@
 import { client } from '../database/config';
 require('dotenv').config();
-const ACTUAL_HOST = process.env.ACTUAL_HOST;
 
-export async function createTemporaryPage(player_usernames:string[], region:string, daysUntilExpiration:number){
+export async function createTemporaryPage(player_usernames:string[], region:string, daysUntilExpiration:number, fullUrl:string){
     try {
         await client.connect();
         const db = client.db("LoLRushDB");
@@ -29,7 +28,7 @@ export async function createTemporaryPage(player_usernames:string[], region:stri
         console.log('Document inserted:', newPage);
         
         client.close();
-        return ACTUAL_HOST + "/page/" + nextUniqueId;
+        return fullUrl + "/page/" + nextUniqueId;
 
     } catch (err) {
       console.error('Error:', err);
