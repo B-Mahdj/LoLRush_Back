@@ -4,6 +4,8 @@ import { createTemporaryPage } from '../services/createTemporaryPage';
 
 export const createTemporaryPageController = async (req: express.Request, res: express.Response) => {
     try{
+        let fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+        console.log('Full url:', fullUrl);
         const { player_1, player_2, player_3, player_4,player_5,player_6,player_7,player_8,region, daysUntilExpiration } = req.body;
         if(!player_1 || !player_2 || !region){
             return res.status(400).json({message: 'Bad Request, one or more of the required fields are missing'});
