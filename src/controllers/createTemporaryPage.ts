@@ -4,6 +4,7 @@ import { createTemporaryPage } from '../services/createTemporaryPage';
 
 export const createTemporaryPageController = async (req: express.Request, res: express.Response) => {
     try{
+        console.log('Request body:', req.body);
         let fullUrl = req.protocol + '://' + req.get('host');
         const { email, player_1, player_2, player_3, player_4,player_5,player_6,player_7,player_8, region, daysUntilExpiration } = req.body;
         if(!email || !player_1 || !player_2 || !region ){
