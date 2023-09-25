@@ -5,8 +5,8 @@ import { createTemporaryPage } from '../services/createTemporaryPage';
 export const createTemporaryPageController = async (req: express.Request, res: express.Response) => {
     try{
         let fullUrl = req.protocol + '://' + req.get('host');
-        const { player_1, player_2, player_3, player_4,player_5,player_6,player_7,player_8,region, daysUntilExpiration } = req.body;
-        if(!player_1 || !player_2 || !region){
+        const { email, player_1, player_2, player_3, player_4,player_5,player_6,player_7,player_8, region, daysUntilExpiration } = req.body;
+        if(!email || !player_1 || !player_2 || !region ){
             return res.status(400).json({message: 'Bad Request, one or more of the required fields are missing'});
         }  
         else {
@@ -21,7 +21,7 @@ export const createTemporaryPageController = async (req: express.Request, res: e
             if(player_7 !== undefined) player_usernames.push(player_7);
             if(player_8 !== undefined) player_usernames.push(player_8);
             // Call the createTemporaryPage function and pass the array of player_usernames, region and daysUntilExpiration 
-            const result = await createTemporaryPage(player_usernames, region, daysUntilExpiration, fullUrl);
+            const result = await createTemporaryPage(email, player_usernames, region, daysUntilExpiration, fullUrl);
             return res.status(200).json(result);
         }   
     }

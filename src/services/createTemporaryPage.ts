@@ -1,7 +1,7 @@
 import { client } from '../database/config';
 require('dotenv').config();
 
-export async function createTemporaryPage(player_usernames:string[], region:string, daysUntilExpiration:number, fullUrl:string){
+export async function createTemporaryPage(email:string, player_usernames:string[], region:string, daysUntilExpiration:number, fullUrl:string){
     try {
         await client.connect();
         const db = client.db("LoLRushDB");
@@ -18,6 +18,7 @@ export async function createTemporaryPage(player_usernames:string[], region:stri
         // Create a new page document with the calculated unique id
         const newPage = {
             _id: nextUniqueId,
+            email: email,
             player_usernames: player_usernames,
             region: region,
             daysUntilExpiration: daysUntilExpiration
