@@ -1,19 +1,21 @@
 import { client } from '../database/config';
 require('dotenv').config();
 
-export async function createTemporaryPage(email:string, player_usernames:string[], region:string, daysUntilExpiration:number, fullUrl:string){
+export async function createChallenge(email:string, player_usernames:string[], region:string, daysUntilExpiration:number): Promise<number | null> {
     try {
         await client.connect();
         const db = client.db("LoLRushDB");
         const collection = db.collection("Page");
 
         // Using the MongoDb Atlas database, look at the Page collection and find the highest unique _id and add 1 to it    
-        // If the pages collection is empty, set the unique id to 0
+        // If the pages collection is empty, set the unique id to 0 
 
         let highestId: number = await findHighestId(collection);
         console.log('Highest id:', highestId)
         let nextUniqueId:string = (++highestId).toString();
         console.log('Next unique id:', nextUniqueId)
+        // Generate a code that is of 6 digits long and is unique to the page
+        let code:number = Math.floor(100000 + Math.random() * 900000);
 
         // Create a new page document with the calculated unique id
         const newPage = {
@@ -21,7 +23,8 @@ export async function createTemporaryPage(email:string, player_usernames:string[
             email: email,
             player_usernames: player_usernames,
             region: region,
-            daysUntilExpiration: daysUntilExpiration
+            daysUntilExpiration: daysUntilExpiration,
+            code: code
         };
     
         // Insert the new page document
@@ -29,8 +32,7 @@ export async function createTemporaryPage(email:string, player_usernames:string[
         console.log('Document inserted:', newPage);
         
         client.close();
-        return fullUrl + "/page/" + nextUniqueId;
-
+        return code;
     } catch (err) {
       console.error('Error:', err);
     }
@@ -52,7 +54,7 @@ async function findHighestId(collection:any): Promise<number | null> {
         const highestId = result[0]._id;
         return highestId;
       } else {
-        return null;
+        return 0;
       }
     } catch (error) {
       console.error('Error:', error);
