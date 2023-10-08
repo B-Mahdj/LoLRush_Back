@@ -2,9 +2,42 @@ import axios from 'axios';
 import {PlayerInfo, Rank} from '../types/defaut_types';
 import { riot_api_config } from '../utils/header_api_riot';
 import { comparePlayerInfos } from '../utils/compareRanks';
+import { client } from '../database/config';
 
 
-export async function getInfo (player_usernames:string[],region:string) {
+export async function getInfo (code:number): Promise<PlayerInfo[] | null> { 
+  console.log('Code:', code);
+  
+  // Based on the code given in parameter, we get the region and the player_usernames from the database 
+  try {
+    await client.connect();
+    const db = client.db('LoLRushDB');
+    const collection = db.collection('Page');
+
+    const result = await collection.findOne({ code: code });
+
+    if (result) {
+      const player_usernames = result.player_usernames;
+      const region = result.region;
+
+      console.log('Player usernames:', player_usernames);
+      console.log('Region:', region);
+
+      const playerInfo = await getPlayerInfo(player_usernames, region);
+      return playerInfo;
+    } else {
+      throw new Error('Code not found'); // Handle the case where the code doesn't exist
+    }
+  } catch (err) {
+    console.error(err);
+    throw err; // Rethrow the error for the caller to handle
+  } finally {
+    client.close();
+  }
+
+}
+
+async function getPlayerInfo(player_usernames:string[], region:string): Promise<PlayerInfo[]> {
   const playersInfo: PlayerInfo[] = [];
 
   for (const player_username of player_usernames) {
@@ -26,10 +59,10 @@ export async function getInfo (player_usernames:string[],region:string) {
 
     playersInfo.push(playerInfo);
   }
+
   playersInfo.sort(comparePlayerInfos);
   return playersInfo;
 }
-
 
 async function getRank(player_username:string, region:string): Promise<Rank> {
   let BASE_URL = getRegionBaseUrl(region); 
@@ -62,7 +95,7 @@ async function getRank(player_username:string, region:string): Promise<Rank> {
       };
   })
   .catch((error) => {
-    console.error('Error:', error);
+    console.error('Error:', error.message);
     return null;
   });
 }
@@ -91,7 +124,7 @@ async function getWins(player_username:string, region:string): Promise<number> {
       }
   })
   .catch((error) => {
-    console.error('Error:', error);
+    console.error('Error:', error.message);
     return null;
   });
 }
@@ -120,7 +153,7 @@ async function getLosses(player_username:string, region:string): Promise<number>
       }
   })
   .catch((error) => {
-    console.error('Error:', error);
+    console.error('Error:', error.message);
     return null;
   });
 }
