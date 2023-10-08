@@ -1,3 +1,7 @@
+export type ChallengeData = {
+    daysUntilExpiration: number;
+    players_info: PlayerInfo[];
+}
 
 export type PlayerInfo = {
     username: string;

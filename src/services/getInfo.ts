@@ -1,11 +1,11 @@
 import axios from 'axios';
-import {PlayerInfo, Rank} from '../types/defaut_types';
+import {ChallengeData, PlayerInfo, Rank} from '../types/defaut_types';
 import { riot_api_config } from '../utils/header_api_riot';
 import { comparePlayerInfos } from '../utils/compareRanks';
 import { client } from '../database/config';
 
 
-export async function getInfo (code:number): Promise<PlayerInfo[] | null> { 
+export async function getInfo (code:number): Promise<ChallengeData | null> { 
   console.log('Code:', code);
   
   // Based on the code given in parameter, we get the region and the player_usernames from the database 
@@ -19,12 +19,18 @@ export async function getInfo (code:number): Promise<PlayerInfo[] | null> {
     if (result) {
       const player_usernames = result.player_usernames;
       const region = result.region;
+      const daysUntilExpiration = result.daysUntilExpiration;
 
       console.log('Player usernames:', player_usernames);
       console.log('Region:', region);
+      console.log('Days until expiration:', daysUntilExpiration);
 
-      const playerInfo = await getPlayerInfo(player_usernames, region);
-      return playerInfo;
+
+      let challengeData: ChallengeData = {
+        daysUntilExpiration: daysUntilExpiration,
+        players_info: await getPlayerInfo(player_usernames, region)
+      };
+      return challengeData;
     } else {
       throw new Error('Code not found'); // Handle the case where the code doesn't exist
     }
