@@ -43,28 +43,25 @@ export async function getInfo (code:number): Promise<ChallengeData | null> {
 
 }
 
-async function getPlayerInfo(player_usernames:string[], region:string): Promise<PlayerInfo[]> {
-  const playersInfo: PlayerInfo[] = [];
+async function getPlayerInfo(player_usernames: string[], region: string): Promise<PlayerInfo[]> {
+  const playersInfo: PlayerInfo[] = await Promise.all(player_usernames.map(async (player_username) => {
+    const [rank, wins, losses] = await Promise.all([
+      getRank(player_username, region),
+      getWins(player_username, region),
+      getLosses(player_username, region),
+    ]);
 
-  for (const player_username of player_usernames) {
-    const playerInfo: PlayerInfo = {
+    const totalGames = wins + losses;
+    const winrate = totalGames > 1 ? Math.round((wins / totalGames) * 100) : 0;
+
+    return {
       username: player_username,
-      rank: await getRank(player_username, region),
-      wins: await getWins(player_username, region),
-      losses: await getLosses(player_username, region),
-      winrate: 0,
+      rank,
+      wins,
+      losses,
+      winrate,
     };
-
-    if(playerInfo.wins + playerInfo.losses > 1){
-    playerInfo.winrate = Math.round((playerInfo.wins / (playerInfo.wins + playerInfo.losses)) * 100);
-    }
-    else{
-      playerInfo.winrate = 0;
-    }
-    console.log("Playerinfo :" + playerInfo.username, playerInfo.rank, playerInfo.wins, playerInfo.losses, playerInfo.winrate);
-
-    playersInfo.push(playerInfo);
-  }
+  }));
 
   playersInfo.sort(comparePlayerInfos);
   return playersInfo;
