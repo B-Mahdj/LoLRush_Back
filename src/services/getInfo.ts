@@ -1,14 +1,13 @@
 import axios from 'axios';
-import {ChallengeData, PlayerInfo, Rank} from '../types/defaut_types';
+import { ChallengeData, PlayerInfo, Rank } from '../types/defaut_types';
 import { riot_api_config } from '../utils/header_api_riot';
 import { comparePlayerInfos } from '../utils/compareRanks';
 import { client } from '../database/config';
 
-
-export async function getInfo (code:number): Promise<ChallengeData | null> { 
+export async function getInfo(code: number): Promise<ChallengeData | null> {
   console.log('Code:', code);
-  
-  // Based on the code given in parameter, we get the region and the player_usernames from the database 
+
+  // Based on the code given in parameter, we get the region and the player_usernames from the database
   try {
     await client.connect();
     const db = client.db('LoLRushDB');
@@ -25,8 +24,7 @@ export async function getInfo (code:number): Promise<ChallengeData | null> {
       console.log('Region:', region);
       console.log('Days until expiration:', daysUntilExpiration);
 
-
-      let challengeData: ChallengeData = {
+      const challengeData: ChallengeData = {
         daysUntilExpiration: daysUntilExpiration,
         players_info: await getPlayerInfo(player_usernames, region)
       };
@@ -40,16 +38,11 @@ export async function getInfo (code:number): Promise<ChallengeData | null> {
   } finally {
     client.close();
   }
-
 }
 
 async function getPlayerInfo(player_usernames: string[], region: string): Promise<PlayerInfo[]> {
-  const playersInfo: PlayerInfo[] = await Promise.all(player_usernames.map(async (player_username) => {
-    const [rank, wins, losses] = await Promise.all([
-      getRank(player_username, region),
-      getWins(player_username, region),
-      getLosses(player_username, region),
-    ]);
+  const playerData = await Promise.all(player_usernames.map(async (player_username) => {
+    const [rank, wins, losses] = await getPlayerStats(player_username, region);
 
     const totalGames = wins + losses;
     const winrate = totalGames > 1 ? Math.round((wins / totalGames) * 100) : 0;
@@ -63,105 +56,52 @@ async function getPlayerInfo(player_usernames: string[], region: string): Promis
     };
   }));
 
-  playersInfo.sort(comparePlayerInfos);
-  return playersInfo;
+  playerData.sort(comparePlayerInfos);
+  return playerData;
 }
 
-async function getRank(player_username:string, region:string): Promise<Rank> {
-  let BASE_URL = getRegionBaseUrl(region); 
+async function getPlayerStats(player_username: string, region: string): Promise<[Rank, number, number]> {
+  const BASE_URL = getRegionBaseUrl(region);
   const endpoint1 = `/lol/summoner/v4/summoners/by-name/${player_username}`;
   const endpoint2 = `/lol/league/v4/entries/by-summoner`;
 
-  return axios
-  .get(`${BASE_URL}${endpoint1}`, riot_api_config)
-  .then((response) => {
-    console.log(response.data);
-    const encryptedSummonerId = response.data.id;
-    return axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
-  })
-  .then((response) => {
-      console.log(response.data);
-      let rankedSoloQueue = findRankedSoloQueue(response.data);
+  try {
+    // Make the first API call to get summoner data
+    const summonerData = await axios.get(`${BASE_URL}${endpoint1}`, riot_api_config);
+    console.log(summonerData.data);
 
-      if (rankedSoloQueue === null) {
-        return {
+    const encryptedSummonerId = summonerData.data.id;
+
+    // Make the second API call with the encryptedSummonerId to get league data
+    const leagueData = await axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
+    console.log(leagueData.data);
+
+    const rankedSoloQueue = findRankedSoloQueue(leagueData.data);
+
+    const rank: Rank = rankedSoloQueue
+      ? {
+          tier: rankedSoloQueue.tier,
+          rank: rankedSoloQueue.rank,
+          leaguePoints: rankedSoloQueue.leaguePoints,
+        }
+      : {
           tier: 'UNRANKED',
           rank: '',
-          leaguePoints: 0
+          leaguePoints: 0,
         };
-      }
 
-      return {
-        tier: rankedSoloQueue.tier,
-        rank: rankedSoloQueue.rank,  
-        leaguePoints: rankedSoloQueue.leaguePoints
-      };
-  })
-  .catch((error) => {
+    const wins = rankedSoloQueue ? rankedSoloQueue.wins : 0;
+    const losses = rankedSoloQueue ? rankedSoloQueue.losses : 0;
+
+    return [rank, wins, losses];
+  } catch (error) {
     console.error('Error:', error.message);
-    return null;
-  });
+    // Handle or propagate the error as needed
+    throw error;
+  }
 }
 
-async function getWins(player_username:string, region:string): Promise<number> {
-  let BASE_URL = getRegionBaseUrl(region); 
-  const endpoint1 = `/lol/summoner/v4/summoners/by-name/${player_username}`;
-  const endpoint2 = `/lol/league/v4/entries/by-summoner`;
-
-  return axios
-  .get(`${BASE_URL}${endpoint1}`, riot_api_config)
-  .then((response) => {
-    console.log(response.data);
-    const encryptedSummonerId = response.data.id;
-    return axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
-  })
-  .then((response) => {
-      console.log(response.data);
-      let rankedSoloQueue = findRankedSoloQueue(response.data);
-
-      if (rankedSoloQueue === null) {
-        return 0;
-      }
-      else{
-        return rankedSoloQueue.wins;  
-      }
-  })
-  .catch((error) => {
-    console.error('Error:', error.message);
-    return null;
-  });
-}
-
-async function getLosses(player_username:string, region:string): Promise<number> {
-  let BASE_URL = getRegionBaseUrl(region); 
-  const endpoint1 = `/lol/summoner/v4/summoners/by-name/${player_username}`;
-  const endpoint2 = `/lol/league/v4/entries/by-summoner`;
-
-  return axios
-  .get(`${BASE_URL}${endpoint1}`, riot_api_config)
-  .then((response) => {
-    console.log(response.data);
-    const encryptedSummonerId = response.data.id;
-    return axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
-  })
-  .then((response) => {
-      console.log(response.data);
-      let rankedSoloQueue = findRankedSoloQueue(response.data);
-
-      if (rankedSoloQueue === null) {
-        return 0;
-      }
-      else{
-        return rankedSoloQueue.losses;  
-      }
-  })
-  .catch((error) => {
-    console.error('Error:', error.message);
-    return null;
-  });
-}
-
-function findRankedSoloQueue(data: any[]): any | null {
+function findRankedSoloQueue(data: any[]): any{
   for (const obj of data) {
     if (obj.queueType === 'RANKED_SOLO_5x5') {
       return obj;
@@ -170,24 +110,25 @@ function findRankedSoloQueue(data: any[]): any | null {
   return null; // Return null if no object with the specified queueType is found
 }
 
-function getRegionBaseUrl(region:string) {
-  switch (region) {
-      case 'NA1': return 'https://na1.api.riotgames.com';
-      case 'EUW1': return 'https://euw1.api.riotgames.com';
-      case 'BR1': return 'https://br1.api.riotgames.com';
-      case 'EUN1': return 'https://eun1.api.riotgames.com';
-      case 'JP1': return 'https://jp1.api.riotgames.com';
-      case 'KR': return 'https://kr.api.riotgames.com';
-      case 'LA1': return 'https://la1.api.riotgames.com';
-      case 'LA2': return 'https://la2.api.riotgames.com';
-      case 'OC1': return 'https://oc1.api.riotgames.com';
-      case 'TR1': return 'https://tr1.api.riotgames.com';
-      case 'RU': return 'https://ru.api.riotgames.com';
-      case 'PH2': return 'https://ph2.api.riotgames.com';
-      case 'SG2': return 'https://sg2.api.riotgames.com';
-      case 'TH2': return 'https://th2.api.riotgames.com';
-      case 'TW2': return 'https://tw2.api.riotgames.com';
-      case 'VN2': return 'https://vn2.api.riotgames.com';
-      default: return 'https://na1.api.riotgames.com';
-  }
+function getRegionBaseUrl(region: string) {
+  const regionMap = {
+    'NA1': 'https://na1.api.riotgames.com',
+    'EUW1': 'https://euw1.api.riotgames.com',
+    'BR1': 'https://br1.api.riotgames.com',
+    'EUN1': 'https://eun1.api.riotgames.com',
+    'JP1': 'https://jp1.api.riotgames.com',
+    'KR': 'https://kr.api.riotgames.com',
+    'LA1': 'https://la1.api.riotgames.com',
+    'LA2': 'https://la2.api.riotgames.com',
+    'OC1': 'https://oc1.api.riotgames.com',
+    'TR1': 'https://tr1.api.riotgames.com',
+    'RU': 'https://ru.api.riotgames.com',
+    'PH2': 'https://ph2.api.riotgames.com',
+    'SG2': 'https://sg2.api.riotgames.com',
+    'TH2': 'https://th2.api.riotgames.com',
+    'TW2': 'https://tw2.api.riotgames.com',
+    'VN2': 'https://vn2.api.riotgames.com',
+  };
+
+  return regionMap[region as keyof typeof regionMap] || 'https://na1.api.riotgames.com';
 }
