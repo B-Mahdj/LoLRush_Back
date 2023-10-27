@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import router from './router';
+import cors from 'cors';
 
 require('dotenv').config();
 const app = express();
@@ -11,6 +12,7 @@ const app = express();
 app.use(compression());
 app.use(cookieParser());
 app.use(bodyParser.json());
+app.use(cors());
 
 const server = http.createServer(app);
 
