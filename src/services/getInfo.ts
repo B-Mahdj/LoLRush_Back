@@ -18,14 +18,14 @@ export async function getInfo(code: number): Promise<ChallengeData | null> {
     if (result) {
       const player_usernames = result.player_usernames;
       const region = result.region;
-      const daysUntilExpiration = result.daysUntilExpiration;
+      const challengeEndDate = result.challengeEndDate;
 
       console.log('Player usernames:', player_usernames);
       console.log('Region:', region);
-      console.log('Days until expiration:', daysUntilExpiration);
+      console.log('Challenge end date:', challengeEndDate);
 
       const challengeData: ChallengeData = {
-        daysUntilExpiration: daysUntilExpiration,
+        challengeEndDate: challengeEndDate,
         players_info: await getPlayerInfo(player_usernames, region)
       };
       return challengeData;
