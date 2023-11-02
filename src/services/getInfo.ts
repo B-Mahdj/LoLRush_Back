@@ -8,7 +8,6 @@ import { client } from '../database/config';
 export async function getInfo(code: number): Promise<ChallengeData | null> {
   console.log('Code:', code);
 
-  // Based on the code given in parameter, we get the region and the player_usernames from the database
   try {
     await client.connect();
     const db = client.db('LoLRushDB');
@@ -17,22 +16,29 @@ export async function getInfo(code: number): Promise<ChallengeData | null> {
     const result = await collection.findOne({ code: code });
 
     if (result) {
-      const player_usernames = result.player_usernames;
-      const region = result.region;
-      const challengeEndDate = result.challengeEndDate;
+      if (result.finished) {
+        console.log('Challenge already finished');
+        return result.final_players_info;
+      }
+      else {
+        const player_usernames = result.player_usernames;
+        const region = result.region;
+        const challengeEndDate = result.challengeEndDate;
 
-      console.log('Player usernames:', player_usernames);
-      console.log('Region:', region);
-      console.log('Challenge end date:', challengeEndDate);
+        console.log('Player usernames:', player_usernames);
+        console.log('Region:', region);
+        console.log('Challenge end date:', challengeEndDate);
 
-      const challengeData: ChallengeData = {
-        challengeEndDate: challengeEndDate,
-        players_info: await getPlayerInfo(player_usernames, region)
-      };
-      return challengeData;
+        const challengeData: ChallengeData = {
+          challengeEndDate: challengeEndDate,
+          players_info: await getPlayerInfo(player_usernames, region)
+        };
+        return challengeData;
+      }
     } else {
       throw new Error('Code not found'); // Handle the case where the code doesn't exist
     }
+
   } catch (err) {
     console.error(err);
     throw err; // Rethrow the error for the caller to handle
@@ -81,15 +87,15 @@ async function getPlayerStats(player_username: string, region: string): Promise<
 
     const rank: Rank = rankedSoloQueue
       ? {
-          tier: rankedSoloQueue.tier,
-          rank: rankedSoloQueue.rank,
-          leaguePoints: rankedSoloQueue.leaguePoints,
-        }
+        tier: rankedSoloQueue.tier,
+        rank: rankedSoloQueue.rank,
+        leaguePoints: rankedSoloQueue.leaguePoints,
+      }
       : {
-          tier: 'UNRANKED',
-          rank: '',
-          leaguePoints: 0,
-        };
+        tier: 'UNRANKED',
+        rank: '',
+        leaguePoints: 0,
+      };
 
     const wins = rankedSoloQueue ? rankedSoloQueue.wins : 0;
     const losses = rankedSoloQueue ? rankedSoloQueue.losses : 0;
@@ -102,7 +108,7 @@ async function getPlayerStats(player_username: string, region: string): Promise<
   }
 }
 
-function findRankedSoloQueue(data: any[]): any{
+function findRankedSoloQueue(data: any[]): any {
   for (const obj of data) {
     if (obj.queueType === 'RANKED_SOLO_5x5') {
       return obj;
