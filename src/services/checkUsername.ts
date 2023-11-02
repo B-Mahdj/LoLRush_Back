@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { riot_api_config } from '../utils/header_api_riot';
-import { getRegionBaseUrl } from './getInfo';
+import { getRegionBaseUrl } from '../utils/getRegionBaseUrl';
 
 export async function checkUsername(player_username: string, region: string): Promise<boolean> {
     try {
