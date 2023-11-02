@@ -7,13 +7,6 @@ export async function createChallenge(email:string, player_usernames:string[], r
         const db = client.db("LoLRushDB");
         const collection = db.collection("Page");
 
-        // Using the MongoDb Atlas database, look at the Page collection and find the highest unique _id and add 1 to it    
-        // If the pages collection is empty, set the unique id to 0 
-
-        let highestId: number = await getNumbersOfDocuments(collection);
-        console.log('Highest id:', highestId)
-        let nextUniqueId:string = (++highestId).toString();
-        console.log('Next unique id:', nextUniqueId)
         // Generate a code that is of 6 digits long and is unique to the page
         let code:number = Math.floor(100000 + Math.random() * 900000);
 
@@ -22,7 +15,6 @@ export async function createChallenge(email:string, player_usernames:string[], r
         endDate.setDate(startDate.getDate() + challengeDurationDays);
 
         const newPage = {
-          _id: nextUniqueId,
           email: email,
           player_usernames: player_usernames,
           region: region,
@@ -40,16 +32,4 @@ export async function createChallenge(email:string, player_usernames:string[], r
       console.error('Error:', err);
     }
 
-}
-
-// Function to find the highest _id in the collection
-async function getNumbersOfDocuments(collection: any): Promise<number | null> {
-  try {
-      const count = await collection.countDocuments();
-      console.log('Count of document:', count);
-      return count;
-  } catch (error) {
-      console.error('Error:', error);
-      return null;
-  }
 }
