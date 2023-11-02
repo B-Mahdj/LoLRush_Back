@@ -110,7 +110,7 @@ function findRankedSoloQueue(data: any[]): any{
   return null; // Return null if no object with the specified queueType is found
 }
 
-function getRegionBaseUrl(region: string) {
+export function getRegionBaseUrl(region: string) {
   const regionMap = {
     'NA1': 'https://na1.api.riotgames.com',
     'EUW1': 'https://euw1.api.riotgames.com',
