@@ -1,35 +1,44 @@
+import { endChallenge } from '../utils/endChallenge';
 import { client } from '../database/config';
 require('dotenv').config();
 
-export async function createChallenge(email:string, player_usernames:string[], region:string, challengeDurationDays:number): Promise<number | null> {
-    try {
-        await client.connect();
-        const db = client.db("LoLRushDB");
-        const collection = db.collection("Page");
+export async function createChallenge(email: string, player_usernames: string[], region: string, challengeDurationDays: number): Promise<number | null> {
+  try {
+    await client.connect();
+    const db = client.db("LoLRushDB");
+    const collection = db.collection("Page");
 
-        // Generate a code that is of 6 digits long and is unique to the page
-        let code:number = Math.floor(100000 + Math.random() * 900000);
+    // Generate a code that is of 6 digits long and is unique to the page
+    let code: number = Math.floor(100000 + Math.random() * 900000);
 
-        const startDate = new Date();
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + challengeDurationDays);
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + challengeDurationDays);
 
-        const newPage = {
-          email: email,
-          player_usernames: player_usernames,
-          region: region,
-          challengeEndDate: endDate,
-          code: code
-        };
-    
-        // Insert the new page document
-        await collection.insertOne(newPage);
-        console.log('Document inserted:', newPage);
-        
-        client.close();
-        return code;
-    } catch (err) {
-      console.error('Error:', err);
-    }
+    const newPage = {
+      email: email,
+      player_usernames: player_usernames,
+      region: region,
+      challengeEndDate: endDate,
+      code: code,
+      finished: false,
+    };
+
+    // Insert the new page document
+    await collection.insertOne(newPage);
+    console.log('Document inserted:', newPage);
+
+    // Schedule the end of challenge
+    const timeout = (endDate.getTime() - Date.now());
+    console.log('Timeout:', timeout);
+    setTimeout(async () => {
+      await endChallenge(code);
+    }, timeout);
+
+    client.close();
+    return code;
+  } catch (err) {
+    console.error('Error:', err);
+  }
 
 }
