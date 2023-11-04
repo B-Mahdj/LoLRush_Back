@@ -6,9 +6,12 @@ export const createTemporaryPageController = async (req: express.Request, res: e
     try{
         console.log('Request body:', req.body);
         const { email, player_1, player_2, player_3, player_4,player_5,player_6,player_7,player_8, region, daysUntilExpiration } = req.body;
-        if(!email || !player_1 || !player_2 || !region ){
+        if(!email || !player_1 || !player_2 || !region || !daysUntilExpiration ){
             return res.status(400).json({message: 'Bad Request, one or more of the required fields are missing'});
-        }  
+        } 
+        else if ( daysUntilExpiration < 1 || daysUntilExpiration > 14){
+            return res.status(400).json({message: 'Bad Request, daysUntilExpiration must be between 1 and 14'});
+        } 
         else {
             let player_usernames: string[] = [];
             // Take the values of player_1 up to player_8 if the values are not equals to undefined add them in an array called player_usernames
