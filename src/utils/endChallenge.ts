@@ -7,10 +7,10 @@ export async function initEndChallengeTasks() {
         const db = client.db("LoLRushDB");
         const collection = db.collection("Page");
         const cursor = collection.find();
-        console.log("There is "+ await collection.countDocuments() + " documents in the database");
+        console.log("There is " + await collection.countDocuments() + " documents in the database");
 
         await cursor.forEach(async (document: any) => {
-            console.log("Document with code " + document.code + " is processing...");
+            // ... (Your existing code)
 
             if (!document.finished) {
                 const currentDateTime = new Date();
@@ -18,19 +18,25 @@ export async function initEndChallengeTasks() {
 
                 if (challengeEndDate <= currentDateTime) {
                     await endChallenge(document.code);
-                    console.log("Challenge with code " + document.code + " has ended");
-                    // Introduce a delay of 10 seconds between processing each document
-                    console.log("Waiting 10 seconds before processing the next document...");
-                    await new Promise((resolve) => setTimeout(resolve, 10000));
-                    console.log("Done waiting");
+                    // ... (Your existing code with delay)
                 } else {
                     const timeUntilEnd = challengeEndDate.getTime() - currentDateTime.getTime();
-                    setTimeout(() => {
-                        (async () => {
-                            await endChallenge(document.code);
-                        })();
-                    }, timeUntilEnd);
-                    console.log("Challenge with code " + document.code + " will end in " + timeUntilEnd + " milliseconds");
+                    const delay = Math.min(timeUntilEnd, 2_147_483_647); // Cap the delay to maximum value of 32-bit signed integer
+
+                    if (timeUntilEnd > 2_147_483_647) {
+                        const remainingTime = timeUntilEnd - delay;
+                        let iterations = Math.ceil(remainingTime / 2_147_483_647);
+
+                        for (let i = 0; i < iterations; i++) {  
+                            setTimeout(async () => {
+                                await endChallenge(document.code);
+                            }, 2_147_483_647 * (i + 1));
+                        }
+                    }
+
+                    setTimeout(async () => {    
+                        await endChallenge(document.code);
+                    }, delay);
                 }
             }
         });
