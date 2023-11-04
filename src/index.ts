@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import router from './router';
 import cors from 'cors';
+import { initEndChallengeTasks } from './utils/endChallenge';
 
 require('dotenv').config();
 const app = express();
@@ -21,3 +22,5 @@ server.listen(8080, () => {
 });
 
 app.use('/', router());
+
+initEndChallengeTasks();

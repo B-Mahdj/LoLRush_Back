@@ -31,8 +31,10 @@ export async function createChallenge(email: string, player_usernames: string[],
     // Schedule the end of challenge
     const timeout = (endDate.getTime() - Date.now());
     console.log('Timeout:', timeout);
-    setTimeout(async () => {
-      await endChallenge(code);
+    setTimeout(() => {
+      (async () => {
+        await endChallenge(code);
+      })();
     }, timeout);
 
     client.close();
