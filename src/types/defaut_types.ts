@@ -15,4 +15,5 @@ export type Rank = {
     tier:string;
     rank:string;
     leaguePoints:number;
+    icon:string;
 }

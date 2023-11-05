@@ -4,8 +4,10 @@ import { riot_api_config } from '../utils/header_api_riot';
 import { comparePlayerInfos } from '../utils/compareRanks';
 import { getRegionBaseUrl } from '../utils/getRegionBaseUrl';
 import { client } from '../database/config';
+import fs from 'fs';
 
-export async function getInfo(code: number): Promise<ChallengeData | null> {
+
+export async function getInfo(code: number): Promise<ChallengeData> {
   console.log('Code:', code);
 
   try {
@@ -90,11 +92,13 @@ async function getPlayerStats(player_username: string, region: string): Promise<
         tier: rankedSoloQueue.tier,
         rank: rankedSoloQueue.rank,
         leaguePoints: rankedSoloQueue.leaguePoints,
+        icon: getRankIconAsBase64(rankedSoloQueue.tier)
       }
       : {
         tier: 'UNRANKED',
         rank: '',
         leaguePoints: 0,
+        icon: getRankIconAsBase64('UNRANKED')
       };
 
     const wins = rankedSoloQueue ? rankedSoloQueue.wins : 0;
@@ -116,3 +120,15 @@ function findRankedSoloQueue(data: any[]): any {
   }
   return null; // Return null if no object with the specified queueType is found
 }
+
+function getRankIconAsBase64(tier: string) {
+  const imagePath = `./ranks_icons/${tier.toLowerCase()}.png`;
+  const base64Image = getImageAsBase64(imagePath);
+  return base64Image;
+}
+
+// Function to convert image to base64
+function getImageAsBase64(path: string): string {
+  const image = fs.readFileSync(path);
+  return Buffer.from(image).toString('base64');
+};
