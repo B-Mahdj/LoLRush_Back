@@ -20,7 +20,12 @@ export async function getInfo(code: number): Promise<ChallengeData> {
     if (result) {
       if (result.finished) {
         console.log('Challenge already finished');
-        return result.final_players_info;
+        const expiredTime = "00d:00h:00m:00s";
+        const challengeData: ChallengeData = {
+          timeUntilEndChallenge: expiredTime,
+          players_info: result.final_players_info
+        };
+        return challengeData;
       }
       else {
         const player_usernames = result.player_usernames;
@@ -29,8 +34,16 @@ export async function getInfo(code: number): Promise<ChallengeData> {
         const challengeEndDate = new Date(result.challengeEndDate);
         const currentTime = new Date();
 
-        const timeUntilEndChallenge = challengeEndDate.getTime() - currentTime.getTime();
-
+        let  timeUntilEndChallenge = challengeEndDate.getTime() - currentTime.getTime();
+        console.log('Time until end challenge:', timeUntilEndChallenge);
+        if(timeUntilEndChallenge < 0) {
+          const expiredTime = "00d:00h:00m:00s";
+          const challengeData: ChallengeData = {
+            timeUntilEndChallenge: expiredTime,
+            players_info: await getPlayerInfo(player_usernames, region)
+          };
+          return challengeData;
+        }
         const daysRemaining = Math.floor(timeUntilEndChallenge / (1000 * 60 * 60 * 24));
         const hoursRemaining = Math.floor((timeUntilEndChallenge % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutesRemaining = Math.floor((timeUntilEndChallenge % (1000 * 60 * 60)) / (1000 * 60));
