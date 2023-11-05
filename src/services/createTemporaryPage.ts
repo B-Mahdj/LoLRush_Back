@@ -32,7 +32,7 @@ export async function createChallenge(email: string, player_usernames: string[],
     const timeout = (endDate.getTime() - Date.now());
     setTimeout(() => {
       (async () => {
-        await endChallenge(code);
+        await endChallenge(code, collection);
       })();
     }, timeout);
 

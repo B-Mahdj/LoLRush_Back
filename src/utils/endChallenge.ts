@@ -17,7 +17,7 @@ export async function initEndChallengeTasks() {
                 const challengeEndDate = new Date(document.challengeEndDate);
 
                 if (challengeEndDate <= currentDateTime) {
-                    await endChallenge(document.code);
+                    await endChallenge(document.code, collection);
                     console.log("Challenge with code " + document.code + " has ended");
                     // Introduce a delay of 10 seconds between processing each document
                     console.log("Waiting 10 seconds before processing the next document...");
@@ -27,7 +27,7 @@ export async function initEndChallengeTasks() {
                     const timeUntilEnd = challengeEndDate.getTime() - currentDateTime.getTime();
                     setTimeout(() => {
                         (async () => {
-                            await endChallenge(document.code);
+                            await endChallenge(document.code, collection);
                         })();
                     }, timeUntilEnd);
                     console.log("Challenge with code " + document.code + " will end in " + timeUntilEnd + " milliseconds");
@@ -37,21 +37,13 @@ export async function initEndChallengeTasks() {
         console.log("Done processing all documents");
     } catch (error) {
         console.error('Error:', error);
-    } finally {
-        await client.close();
-    }
+    } 
 }
 
-
-
-export async function endChallenge(code: number) {
+export async function endChallenge(code: number, collection: any) {
     try {
         const challengeData = await getInfo(code);
         const players_info = challengeData.players_info;
-
-        await client.connect();
-        const db = client.db("LoLRushDB");
-        const collection = db.collection("Page");
 
         let result = await collection.updateOne(
             { code: code },
@@ -67,8 +59,8 @@ export async function endChallenge(code: number) {
         console.log(
             `${result.matchedCount} document(s) matched the filter, updated ${result.modifiedCount} document(s)`
         );
-    }
-    finally {
-        client.close();
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
     }
 }
