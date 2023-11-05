@@ -1,5 +1,5 @@
 export type ChallengeData = {
-    challengeEndDate: Date;
+    timeUntilEndChallenge: string;
     players_info: PlayerInfo[];
 }
 

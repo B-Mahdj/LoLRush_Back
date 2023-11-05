@@ -25,14 +25,25 @@ export async function getInfo(code: number): Promise<ChallengeData> {
       else {
         const player_usernames = result.player_usernames;
         const region = result.region;
-        const challengeEndDate = result.challengeEndDate;
+        // timeUntilEndChallenge is a Date object that represents the time until the challenge ends
+        const challengeEndDate = new Date(result.challengeEndDate);
+        const currentTime = new Date();
+
+        const timeUntilEndChallenge = challengeEndDate.getTime() - currentTime.getTime();
+
+        const daysRemaining = Math.floor(timeUntilEndChallenge / (1000 * 60 * 60 * 24));
+        const hoursRemaining = Math.floor((timeUntilEndChallenge % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutesRemaining = Math.floor((timeUntilEndChallenge % (1000 * 60 * 60)) / (1000 * 60));
+        const secondsRemaining = Math.floor((timeUntilEndChallenge % (1000 * 60)) / 1000);
+
+        const formattedTime = `${daysRemaining.toString().padStart(2, '0')}d:${hoursRemaining.toString().padStart(2, '0')}h:${minutesRemaining.toString().padStart(2, '0')}m:${secondsRemaining.toString().padStart(2, '0')}s`;
 
         console.log('Player usernames:', player_usernames);
         console.log('Region:', region);
-        console.log('Challenge end date:', challengeEndDate);
+        console.log('Time until end challenge:', formattedTime);
 
         const challengeData: ChallengeData = {
-          challengeEndDate: challengeEndDate,
+          timeUntilEndChallenge: formattedTime,
           players_info: await getPlayerInfo(player_usernames, region)
         };
         return challengeData;
