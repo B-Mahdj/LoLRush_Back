@@ -91,11 +91,15 @@ async function getPlayerInfo(player_usernames: string[], region: string): Promis
     } else {
       return null; // Or handle as per your requirement for empty usernames
     }
-  }).filter(player => player !== null));
-  console.log('Player data:', playerData);
-  playerData.sort(comparePlayerInfos);
-  console.log('Sorted player data:', playerData);
-  return playerData;
+  }));
+  
+  const filteredPlayerData = playerData.filter(Boolean); // Remove null values
+
+  console.log('Player data:', filteredPlayerData);
+  filteredPlayerData.sort(comparePlayerInfos);
+  console.log('Sorted player data:', filteredPlayerData);
+  
+  return filteredPlayerData;
 }
 
 
