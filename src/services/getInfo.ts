@@ -93,11 +93,8 @@ async function getPlayerInfo(player_usernames: string[], region: string): Promis
     }
   }));
   
-  const filteredPlayerData = playerData.filter(Boolean); // Remove null values
-
-  console.log('Player data:', filteredPlayerData);
+  const filteredPlayerData = playerData.filter(Boolean); // Remove null values from the array
   filteredPlayerData.sort(comparePlayerInfos);
-  console.log('Sorted player data:', filteredPlayerData);
   
   return filteredPlayerData;
 }
@@ -142,9 +139,14 @@ async function getPlayerStats(player_username: string, region: string): Promise<
 
     return [rank, wins, losses];
   } catch (error) {
-    console.error('Error:', error.message);
-    // Handle or propagate the error as needed
-    throw error;
+    if (axios.isAxiosError(error)) {
+      console.log("Error in call to Riot API");
+      console.log("The status of the error is ", error.status)
+      console.log("The response of the error is ", error.response.data)
+    } else {
+      console.error(error);
+    }
+    throw error; // Rethrow the error for the caller to handle
   }
 }
 
