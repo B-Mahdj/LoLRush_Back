@@ -2,7 +2,7 @@ import { PlayerInfo, Rank } from '../types/defaut_types';
 
 function compareRanks(rankA: Rank, rankB: Rank): number {
   // Define the order of tiers and ranks
-  const tierOrder = ['Challenger', 'Grandmaster', 'Master', 'Diamond','Emerald', 'Platinum', 'Gold', 'Silver', 'Bronze', 'Iron'];
+  const tierOrder = ['CHALLENGER', 'GRANDMASTER', 'MASTER', 'DIAMOND','EMERALD', 'PLATINUM', 'GOLD', 'SILVER', 'BRONZE', 'IRON'];
   const rankOrder = ['I', 'II', 'III', 'IV', 'V'];
 
   // Compare tiers
