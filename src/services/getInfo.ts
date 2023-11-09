@@ -35,7 +35,7 @@ export async function getInfo(code: number): Promise<ChallengeData> {
         const currentTime = new Date();
 
         let timeUntilEndChallenge = challengeEndDate.getTime() - currentTime.getTime();
-        console.log('Time until end challenge:', timeUntilEndChallenge);
+        console.log(`Time until end challenge for code : ${code}`, timeUntilEndChallenge);
         if (timeUntilEndChallenge < 0) {
           const expiredTime = "00d:00h:00m:00s";
           const challengeData: ChallengeData = {
@@ -92,8 +92,9 @@ async function getPlayerInfo(player_usernames: string[], region: string): Promis
       return null; // Or handle as per your requirement for empty usernames
     }
   }).filter(player => player !== null));
-
+  console.log('Player data:', playerData);
   playerData.sort(comparePlayerInfos);
+  console.log('Sorted player data:', playerData);
   return playerData;
 }
 
