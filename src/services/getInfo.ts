@@ -100,15 +100,17 @@ async function getPlayerStats(player_username: string, region: string): Promise<
 
   try {
     // Make the first API call to get summoner data
+    console.log('Making API call to:', `${BASE_URL}${endpoint1}`);
     const summonerData = await axios.get(`${BASE_URL}${endpoint1}`, riot_api_config);
-    console.log(summonerData.data);
+    console.log('Data fetched from API call is :', summonerData.data);
 
     const encryptedSummonerId = summonerData.data.id;
 
     // Make the second API call with the encryptedSummonerId to get league data
+    console.log('Making API call to:', `${BASE_URL}${endpoint2}/${encryptedSummonerId}`);
     const leagueData = await axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
-    console.log(leagueData.data);
-
+    console.log('Data fetched from API call is :', leagueData.data);
+    
     const rankedSoloQueue = findRankedSoloQueue(leagueData.data);
 
     const rank: Rank = rankedSoloQueue
