@@ -94,7 +94,6 @@ async function getPlayerInfo(player_usernames: string[], region: string): Promis
   }));
   
   const filteredPlayerData = playerData.filter(Boolean); // Remove null values from the array
-  console.log('Filtered player data before sorting : ', filteredPlayerData);
   const filteredPlayerDataSorted = filteredPlayerData.sort(comparePlayerInfos);
   console.log('Filtered player data after sorting : ', filteredPlayerDataSorted);
   
