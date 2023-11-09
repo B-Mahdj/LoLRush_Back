@@ -34,9 +34,9 @@ export async function getInfo(code: number): Promise<ChallengeData> {
         const challengeEndDate = new Date(result.challengeEndDate);
         const currentTime = new Date();
 
-        let  timeUntilEndChallenge = challengeEndDate.getTime() - currentTime.getTime();
+        let timeUntilEndChallenge = challengeEndDate.getTime() - currentTime.getTime();
         console.log('Time until end challenge:', timeUntilEndChallenge);
-        if(timeUntilEndChallenge < 0) {
+        if (timeUntilEndChallenge < 0) {
           const expiredTime = "00d:00h:00m:00s";
           const challengeData: ChallengeData = {
             timeUntilEndChallenge: expiredTime,
@@ -75,23 +75,28 @@ export async function getInfo(code: number): Promise<ChallengeData> {
 
 async function getPlayerInfo(player_usernames: string[], region: string): Promise<PlayerInfo[]> {
   const playerData = await Promise.all(player_usernames.map(async (player_username) => {
-    const [rank, wins, losses] = await getPlayerStats(player_username, region);
+    if (player_username.trim() !== '') {
+      const [rank, wins, losses] = await getPlayerStats(player_username, region);
 
-    const totalGames = wins + losses;
-    const winrate = totalGames > 1 ? Math.round((wins / totalGames) * 100) : 0;
+      const totalGames = wins + losses;
+      const winrate = totalGames > 1 ? Math.round((wins / totalGames) * 100) : 0;
 
-    return {
-      username: player_username,
-      rank,
-      wins,
-      losses,
-      winrate,
-    };
-  }));
+      return {
+        username: player_username,
+        rank,
+        wins,
+        losses,
+        winrate,
+      };
+    } else {
+      return null; // Or handle as per your requirement for empty usernames
+    }
+  }).filter(player => player !== null));
 
   playerData.sort(comparePlayerInfos);
   return playerData;
 }
+
 
 async function getPlayerStats(player_username: string, region: string): Promise<[Rank, number, number]> {
   const BASE_URL = getRegionBaseUrl(region);
@@ -110,7 +115,7 @@ async function getPlayerStats(player_username: string, region: string): Promise<
     console.log('Making API call to:', `${BASE_URL}${endpoint2}/${encryptedSummonerId}`);
     const leagueData = await axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
     console.log('Data fetched from API call is :', leagueData.data);
-    
+
     const rankedSoloQueue = findRankedSoloQueue(leagueData.data);
 
     const rank: Rank = rankedSoloQueue
