@@ -8,8 +8,8 @@ export async function createChallenge(email: string, player_usernames: string[],
     const db = client.db("LoLRushDB");
     const collection = db.collection("Page");
 
-    // Generate a code that is of 6 digits long and is unique to the page
-    let code: number = Math.floor(100000 + Math.random() * 900000);
+    // Generate a code that is of 8 digits long and is unique to the page
+    let code: number = Math.floor(10000000 + Math.random() * 90000000);
 
     const startDate = new Date();
     const endDate = new Date(startDate);
