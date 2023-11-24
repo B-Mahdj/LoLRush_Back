@@ -34,9 +34,9 @@ export async function getInfo(code: number): Promise<ChallengeData> {
         const challengeEndDate = new Date(result.challengeEndDate);
         const currentTime = new Date();
 
-        let  timeUntilEndChallenge = challengeEndDate.getTime() - currentTime.getTime();
-        console.log('Time until end challenge:', timeUntilEndChallenge);
-        if(timeUntilEndChallenge < 0) {
+        let timeUntilEndChallenge = challengeEndDate.getTime() - currentTime.getTime();
+        console.log(`Time until end challenge for code : ${code}`, timeUntilEndChallenge);
+        if (timeUntilEndChallenge < 0) {
           const expiredTime = "00d:00h:00m:00s";
           const challengeData: ChallengeData = {
             timeUntilEndChallenge: expiredTime,
@@ -75,23 +75,31 @@ export async function getInfo(code: number): Promise<ChallengeData> {
 
 async function getPlayerInfo(player_usernames: string[], region: string): Promise<PlayerInfo[]> {
   const playerData = await Promise.all(player_usernames.map(async (player_username) => {
-    const [rank, wins, losses] = await getPlayerStats(player_username, region);
+    if (player_username.trim() !== '') {
+      const [rank, wins, losses] = await getPlayerStats(player_username, region);
 
-    const totalGames = wins + losses;
-    const winrate = totalGames > 1 ? Math.round((wins / totalGames) * 100) : 0;
+      const totalGames = wins + losses;
+      const winrate = totalGames > 1 ? Math.round((wins / totalGames) * 100) : 0;
 
-    return {
-      username: player_username,
-      rank,
-      wins,
-      losses,
-      winrate,
-    };
+      return {
+        username: player_username,
+        rank,
+        wins,
+        losses,
+        winrate,
+      };
+    } else {
+      return null; // Or handle as per your requirement for empty usernames
+    }
   }));
-
-  playerData.sort(comparePlayerInfos);
-  return playerData;
+  
+  const filteredPlayerData = playerData.filter(Boolean); // Remove null values from the array
+  const filteredPlayerDataSorted = filteredPlayerData.sort(comparePlayerInfos);
+  console.log('Filtered player data after sorting : ', filteredPlayerDataSorted);
+  
+  return filteredPlayerData;
 }
+
 
 async function getPlayerStats(player_username: string, region: string): Promise<[Rank, number, number]> {
   const BASE_URL = getRegionBaseUrl(region);
@@ -100,14 +108,16 @@ async function getPlayerStats(player_username: string, region: string): Promise<
 
   try {
     // Make the first API call to get summoner data
+    console.log('Making API call to:', `${BASE_URL}${endpoint1}`);
     const summonerData = await axios.get(`${BASE_URL}${endpoint1}`, riot_api_config);
-    console.log(summonerData.data);
+    console.log('Data fetched from API call is :', summonerData.data);
 
     const encryptedSummonerId = summonerData.data.id;
 
     // Make the second API call with the encryptedSummonerId to get league data
+    console.log('Making API call to:', `${BASE_URL}${endpoint2}/${encryptedSummonerId}`);
     const leagueData = await axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
-    console.log(leagueData.data);
+    console.log('Data fetched from API call is :', leagueData.data);
 
     const rankedSoloQueue = findRankedSoloQueue(leagueData.data);
 
@@ -130,9 +140,14 @@ async function getPlayerStats(player_username: string, region: string): Promise<
 
     return [rank, wins, losses];
   } catch (error) {
-    console.error('Error:', error.message);
-    // Handle or propagate the error as needed
-    throw error;
+    if (axios.isAxiosError(error)) {
+      console.log("Error in call to Riot API");
+      console.log("The status of the error is ", error.status)
+      console.log("The response of the error is ", error.response.data)
+    } else {
+      console.error(error);
+    }
+    throw error; // Rethrow the error for the caller to handle
   }
 }
 
