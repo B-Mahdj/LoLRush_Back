@@ -92,11 +92,11 @@ async function getPlayerInfo(player_usernames: string[], region: string): Promis
       return null; // Or handle as per your requirement for empty usernames
     }
   }));
-  
+
   const filteredPlayerData = playerData.filter(Boolean); // Remove null values from the array
   const filteredPlayerDataSorted = filteredPlayerData.sort(comparePlayerInfos);
   console.log('Filtered player data after sorting : ', filteredPlayerDataSorted);
-  
+
   return filteredPlayerData;
 }
 
@@ -107,43 +107,68 @@ async function getPlayerStats(player_username: string, region: string): Promise<
   const endpoint2 = `/lol/league/v4/entries/by-summoner`;
 
   try {
-    // Make the first API call to get summoner data
-    console.log('Making API call to:', `${BASE_URL}${endpoint1}`);
-    const summonerData = await axios.get(`${BASE_URL}${endpoint1}`, riot_api_config);
-    console.log('Data fetched from API call is :', summonerData.data);
+    const encryptedSummonerId = await getEncryptedSummonerId(BASE_URL, endpoint1);
 
-    const encryptedSummonerId = summonerData.data.id;
+    if(encryptedSummonerId !== null){
+      // Make the second API call with the encryptedSummonerId to get league data
+      console.log('Making API call to:', `${BASE_URL}${endpoint2}/${encryptedSummonerId}`);
+      const leagueData = await axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
+      console.log('Data fetched from API call is :', leagueData.data);
 
-    // Make the second API call with the encryptedSummonerId to get league data
-    console.log('Making API call to:', `${BASE_URL}${endpoint2}/${encryptedSummonerId}`);
-    const leagueData = await axios.get(`${BASE_URL}${endpoint2}/${encryptedSummonerId}`, riot_api_config);
-    console.log('Data fetched from API call is :', leagueData.data);
+      const rankedSoloQueue = findRankedSoloQueue(leagueData.data);
 
-    const rankedSoloQueue = findRankedSoloQueue(leagueData.data);
+      const rank: Rank = rankedSoloQueue
+        ? {
+          tier: rankedSoloQueue.tier,
+          rank: rankedSoloQueue.rank,
+          leaguePoints: rankedSoloQueue.leaguePoints,
+          icon: getRankIconAsBase64(rankedSoloQueue.tier)
+        }
+        : {
+          tier: 'UNRANKED',
+          rank: '',
+          leaguePoints: 0,
+          icon: getRankIconAsBase64('UNRANKED')
+        };
 
-    const rank: Rank = rankedSoloQueue
-      ? {
-        tier: rankedSoloQueue.tier,
-        rank: rankedSoloQueue.rank,
-        leaguePoints: rankedSoloQueue.leaguePoints,
-        icon: getRankIconAsBase64(rankedSoloQueue.tier)
-      }
-      : {
-        tier: 'UNRANKED',
-        rank: '',
-        leaguePoints: 0,
-        icon: getRankIconAsBase64('UNRANKED')
-      };
+      const wins = rankedSoloQueue ? rankedSoloQueue.wins : 0;
+      const losses = rankedSoloQueue ? rankedSoloQueue.losses : 0;
 
-    const wins = rankedSoloQueue ? rankedSoloQueue.wins : 0;
-    const losses = rankedSoloQueue ? rankedSoloQueue.losses : 0;
-
-    return [rank, wins, losses];
+      return [rank, wins, losses];
+    }
+    else{
+      return [{tier: 'UNRANKED',rank: '',leaguePoints: 0,icon: getRankIconAsBase64('UNRANKED')}, null, null];
+    }
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.log("Error in call to Riot API");
-      console.log("The status of the error is ", error.status)
+      console.log("The status of the error is ", error.response.status)
       console.log("The response of the error is ", error.response.data)
+    } else {
+      console.error(error);
+    }
+    throw error; // Rethrow the error for the caller to handle
+  }
+}
+
+
+async function getEncryptedSummonerId(BASE_URL: string, endpoint1: string): Promise<any> {
+  // Make the first API call to get summoner data
+  try{
+    console.log('Making API call to:', `${BASE_URL}${endpoint1}`);
+    const summonerData = await axios.get(`${BASE_URL}${endpoint1}`, riot_api_config);
+    console.log('Data fetched from API call is :', summonerData.data);
+    return summonerData.data.id;
+  }
+  catch(error){
+    if (axios.isAxiosError(error)) {
+      console.log("Error in call to Riot API");
+      console.log("The status of the error is ", error.response.status)
+      console.log("The response of the error is ", error.response.data)
+      if(error.response && error.response.status === 404){
+        console.log("The summoner name is invalid");  
+        return null;
+      }
     } else {
       console.error(error);
     }
