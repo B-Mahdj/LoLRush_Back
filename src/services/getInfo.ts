@@ -75,7 +75,7 @@ export async function getInfo(code: number): Promise<ChallengeData> {
 
 async function getPlayerInfo(player_usernames: string[], region: string): Promise<PlayerInfo[]> {
   const playerData = await Promise.all(player_usernames.map(async (player_username) => {
-    if (player_username.trim() !== '') {
+    if (player_username !== null && player_username.trim() !== '') {
       const [rank, wins, losses] = await getPlayerStats(player_username, region);
 
       const totalGames = wins + losses;

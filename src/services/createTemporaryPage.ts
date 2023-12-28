@@ -1,5 +1,7 @@
 import { endChallenge } from '../utils/endChallenge';
 import { client } from '../database/config';
+const nodemailer = require("nodemailer");
+const fs = require('fs');
 require('dotenv').config();
 
 export async function createChallenge(email: string, player_usernames: string[], region: string, challengeDurationDays: number): Promise<number | null> {
@@ -37,7 +39,7 @@ export async function createChallenge(email: string, player_usernames: string[],
     }, timeout);
 
     console.log('Challenge will end in', timeout, 'ms');
-    
+    sendCodeToEmail(email, code);
     return code;
   } catch (err) {
     console.error('Error:', err);
@@ -46,4 +48,30 @@ export async function createChallenge(email: string, player_usernames: string[],
     await client.close();
   }
 
+}
+
+async function sendCodeToEmail(toEmail: string, code: number) {
+  let transporter = nodemailer.createTransport({
+    service: 'hotmail',
+    auth: {
+      user: process.env.EMAIL_ADDRESS_TO_SEND_CODE_FROM,
+      pass: process.env.EMAIL_ADDRESS_PASSWORD_TO_SEND_CODE_FROM,
+    },
+  });
+
+  const htmlContent = fs.readFileSync('./src/utils/mail.html', 'utf-8');
+
+  const customizedHtmlContent = htmlContent.replace(/{{challengeCode}}/g, code.toString());
+    
+  let options = {
+    from: process.env.EMAIL_ADDRESS_TO_SEND_CODE_FROM,
+    to: toEmail,
+    subject: "Your LoLRush code",
+    html: customizedHtmlContent,
+  };
+
+  transporter.sendMail(options, (error: any, info: any) => {
+    if (error) console.log(error)
+    else console.log(info)
+  });
 }
